@@ -24,18 +24,19 @@ const Navbar = () => {
 
   return (
     <nav className="bg-gray-900 text-white flex items-center justify-between px-6 py-4 shadow">
-      <div className="flex items-center space-x-8">
+      <div className='flex items-center space-x-2'>
         <img src={logo} alt="Logo" className="h-8" />
+      </div>
 
-        {puedeVer('recepcion') && <a href="/recepcion" className="hover:underline">Recepción</a>}
-        {puedeVer('transporte') && <a href="/transporte" className="hover:underline">Transporte</a>}
-        {puedeVer('despacho') && <a href="/despacho" className="hover:underline">Despacho</a>}
-        {puedeVer('bultos') && <a href="/bultos" className="hover:underline">Bultos</a>}
-        {puedeVer('usuarios') && <a href="/usuarios" className="hover:underline">Usuarios</a>}
+      <div className="flex-1 flex justify-center space-x-8">
+        {puedeVer('recepcion') && <a href="/recepcion" className="text-white font-semibold text-lg px-3 py-1 rounded-md hover:bg-white/20 transition duration-200">Recepción</a>}
+        {puedeVer('transporte') && <a href="/transporte" className="text-white font-semibold text-lg px-3 py-1 rounded-md hover:bg-white/20 transition duration-200">Transporte</a>}
+        {puedeVer('despacho') && <a href="/despacho" className="text-white font-semibold text-lg px-3 py-1 rounded-md hover:bg-white/20 transition duration-200">Despacho</a>}
+        {puedeVer('bultos') && <a href="/bultos" className="text-white font-semibold text-lg px-3 py-1 rounded-md hover:bg-white/20 transition duration-200">Bultos</a>}
+        {puedeVer('usuarios') && <a href="/usuarios" className="text-white font-semibold text-lg px-3 py-1 rounded-md hover:bg-white/20 transition duration-200">Usuarios</a>}
       </div>
 
       <div className="flex items-center space-x-4">
-        {nombre && <span className="text-sm text-gray-300">Bienvenido, {nombre}</span>}
         <button
           onClick={handleLogout}
           className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
