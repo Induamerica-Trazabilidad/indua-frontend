@@ -1,15 +1,25 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import logo from '../assets/logo.png'
 
 const Navbar = () => {
   const navigate = useNavigate()
   const rol = localStorage.getItem('rol')
-  const nombre = localStorage.getItem('nombre')
+  //const nombre = localStorage.getItem('nombre')
+  const location = useLocation()
+  const path = location.pathname
+
 
   const handleLogout = () => {
     localStorage.removeItem('token')
     localStorage.removeItem('rol')
     navigate('/')
+  }
+
+  const linkClass = (ruta) => {
+    const isActive = path === ruta
+    return `text-white text-lg px-3 py-1 rounded-md font-semibold ${
+      isActive ? 'border-b-2 border-white' : 'hover:bg-white/20 transition duration-200'
+    }`
   }
 
   const puedeVer = (modulo) => {
@@ -29,11 +39,11 @@ const Navbar = () => {
       </div>
 
       <div className="flex-1 flex justify-center space-x-8">
-        {puedeVer('recepcion') && <a href="/recepcion" className="text-white font-semibold text-lg px-3 py-1 rounded-md hover:bg-white/20 transition duration-200">Recepción</a>}
-        {puedeVer('transporte') && <a href="/transporte" className="text-white font-semibold text-lg px-3 py-1 rounded-md hover:bg-white/20 transition duration-200">Transporte</a>}
-        {puedeVer('despacho') && <a href="/despacho" className="text-white font-semibold text-lg px-3 py-1 rounded-md hover:bg-white/20 transition duration-200">Despacho</a>}
-        {puedeVer('bultos') && <a href="/bultos" className="text-white font-semibold text-lg px-3 py-1 rounded-md hover:bg-white/20 transition duration-200">Bultos</a>}
-        {puedeVer('usuarios') && <a href="/usuarios" className="text-white font-semibold text-lg px-3 py-1 rounded-md hover:bg-white/20 transition duration-200">Usuarios</a>}
+        {puedeVer('recepcion') && <a href="/recepcion" className={linkClass('/recepcion')}>Recepción</a>}
+        {puedeVer('transporte') && <a href="/transporte" className= {linkClass('/transporte')}>Transporte</a>}
+        {puedeVer('despacho') && <a href="/despacho" className={linkClass('/despacho')}>Despacho</a>}
+        {puedeVer('bultos') && <a href="/bultos" className={linkClass('/bultos')}>Bultos</a>}
+        {puedeVer('usuarios') && <a href="/usuarios" className={linkClass('/usuarios')}>Usuarios</a>}
       </div>
 
       <div className="flex items-center space-x-4">
