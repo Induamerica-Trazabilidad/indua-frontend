@@ -79,7 +79,8 @@ function CargaModal({ isOpen, onClose, onCargaRegistrada }) {
         throw new Error(errorText)
       }
 
-      if (onCargaRegistrada) onCargaRegistrada();
+      const resultado = await response.json();
+      if (onCargaRegistrada) onCargaRegistrada(resultado.idCarga);
       resetForm();               // limpiar campos
       onClose();
       toast.success('Carga registrada con éxito', { position: 'top-center' });
@@ -87,7 +88,7 @@ function CargaModal({ isOpen, onClose, onCargaRegistrada }) {
 
     } catch (error) {
       console.error('Error al registrar:', error);
-      toast.error(error.message, { position: 'top-center' }) 
+      toast.error(error.message, { position: 'top-center' })
     }
     finally {
       setIsSubmitting(false)
@@ -166,7 +167,7 @@ function CargaModal({ isOpen, onClose, onCargaRegistrada }) {
               accept=".xlsx"
               onChange={e => setFile(e.target.files[0])}
               className="hidden"
-              //required
+            //required
             />
           </label>
 
