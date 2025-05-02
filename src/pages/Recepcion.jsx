@@ -1,28 +1,83 @@
-import CargaModal from '../components/CargaModal'
-import { useEffect, useState } from 'react'
-import axios from 'axios'
-import Layout from '../components/Layout'
+import CargaModal from '../components/CargaModal';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
+import Layout from '../components/Layout';
+import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+Chart.register(ArcElement, Tooltip, Legend);
+import ChartDataLabels from 'chartjs-plugin-datalabels';
+Chart.register(ChartDataLabels);
+
+import ReporteRecepcionPDF from '../components/ReporteRecepcionPDF';
 
 function Recepcion() {
-  const [cargas, setCargas] = useState([])
-  const [modalOpen, setModalOpen] = useState(false)
+  const [cargas, setCargas] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [mostrarReporte, setMostrarReporte] = useState(false);
+  const [codigoParaReporte, setCodigoParaReporte] = useState(null);
+  const [idCargaReporte, setIdCargaReporte] = useState(null);
+  const [faltantesPorLocal, setFaltantesPorLocal] = useState({});
+  const [deterioradosPorLocal, setDeterioradosPorLocal] = useState({});
+  const [renderizado, setRenderizado] = useState(false);
+
+  useEffect(() => {
+    cargarCargas();
+  }, []);
 
   const cargarCargas = () => {
     axios.get('http://localhost:8080/api/cargas')
       .then(response => {
-        const data = response.data
-        console.log('Respuesta del backend:', data)
-        setCargas(Array.isArray(data) ? data : [])
+        const data = response.data;
+        setCargas(Array.isArray(data) ? data : []);
       })
       .catch(error => {
-        console.error('Error al cargar cargas:', error)
-        setCargas([]) // fallback para evitar estado inválido
-      })
-  }
+        console.error('Error al cargar cargas:', error);
+        setCargas([]);
+      });
+  };
 
-  useEffect(() => {
-    cargarCargas()
-  }, [])
+  const agruparBultosPorLocal = (estado, reporte) => {
+    if (!reporte || !reporte.bultosProblema) return {};
+    const filtrados = reporte.bultosProblema.filter(b => b.estadoRecepcion === estado);
+    const agrupados = {};
+
+    filtrados.forEach(b => {
+      const clave = `${b.nombreLocal} - ${b.codigoLocal}`;
+      if (!agrupados[clave]) {
+        agrupados[clave] = [];
+      }
+      agrupados[clave].push(b.codigoBulto);
+    });
+
+    return Object.keys(agrupados)
+      .sort()
+      .reduce((obj, clave) => {
+        obj[clave] = agrupados[clave];
+        return obj;
+      }, {});
+  };
+
+  const handleCargaRegistrada = async (idNuevaCarga) => {
+    if (renderizado) return;
+    setRenderizado(true);
+
+    await cargarCargas();
+
+    if (idNuevaCarga) {
+      const cargasRes = await axios.get('http://localhost:8080/api/cargas');
+      const carga = cargasRes.data.find(c => c.idCarga === idNuevaCarga);
+      if (!carga) return;
+
+      const codigoCarga = carga.codigoCarga;
+      const res = await axios.get(`http://localhost:8080/api/cargas/reporte-recepcion/${idNuevaCarga}`);
+      const reporte = res.data;
+
+      setCodigoParaReporte(codigoCarga);
+      setIdCargaReporte(idNuevaCarga);
+      setFaltantesPorLocal(agruparBultosPorLocal('FALTANTE', reporte));
+      setDeterioradosPorLocal(agruparBultosPorLocal('DETERIORADO', reporte));
+      setMostrarReporte(true);
+    }
+  };
 
   return (
     <Layout>
@@ -61,7 +116,6 @@ function Recepcion() {
           >
             INGRESAR NUEVA CARGA
           </button>
-
           <button
             onClick={() => alert('Función en desarrollo')}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition"
@@ -73,11 +127,24 @@ function Recepcion() {
         <CargaModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
-          onCargaRegistrada={cargarCargas}
+          onCargaRegistrada={handleCargaRegistrada}
         />
+
+        {mostrarReporte && (
+          <ReporteRecepcionPDF
+            codigoCarga={codigoParaReporte}
+            idCarga={idCargaReporte}
+            faltantesPorLocal={faltantesPorLocal}
+            deterioradosPorLocal={deterioradosPorLocal}
+            onRenderComplete={() => {
+              setMostrarReporte(false);
+              setRenderizado(false);
+            }}
+          />
+        )}
       </div>
     </Layout>
-  )
+  );
 }
 
-export default Recepcion
+export default Recepcion;
