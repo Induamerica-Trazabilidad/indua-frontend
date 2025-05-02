@@ -19,6 +19,12 @@ function Recepcion() {
   const [deterioradosPorLocal, setDeterioradosPorLocal] = useState({});
   const [renderizado, setRenderizado] = useState(false);
 
+  const [modalReporteOpen, setModalReporteOpen] = useState(false);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState('');
+  const [codigoSeleccionado, setCodigoSeleccionado] = useState('');
+  const [fechasDisponibles, setFechasDisponibles] = useState([]);
+  const [cargasPorFecha, setCargasPorFecha] = useState({});
+
   useEffect(() => {
     cargarCargas();
   }, []);
@@ -28,6 +34,14 @@ function Recepcion() {
       .then(response => {
         const data = response.data;
         setCargas(Array.isArray(data) ? data : []);
+        const agrupadas = {};
+        data.forEach(c => {
+          const fecha = c.fechaCarga;
+          if (!agrupadas[fecha]) agrupadas[fecha] = [];
+          agrupadas[fecha].push(c);
+        });
+        setCargasPorFecha(agrupadas);
+        setFechasDisponibles(Object.keys(agrupadas));
       })
       .catch(error => {
         console.error('Error al cargar cargas:', error);
@@ -79,6 +93,26 @@ function Recepcion() {
     }
   };
 
+  const handleGenerarReporteDesdeCodigo = async () => {
+    try {
+      const carga = cargasPorFecha[fechaSeleccionada]?.find(c => c.codigoCarga === codigoSeleccionado);
+      if (!carga) return alert('Carga no encontrada');
+
+      const reporteRes = await axios.get(`http://localhost:8080/api/cargas/reporte-recepcion/${carga.idCarga}`);
+      const reporte = reporteRes.data;
+
+      setCodigoParaReporte(carga.codigoCarga);
+      setIdCargaReporte(carga.idCarga);
+      setFaltantesPorLocal(agruparBultosPorLocal('FALTANTE', reporte));
+      setDeterioradosPorLocal(agruparBultosPorLocal('DETERIORADO', reporte));
+      setMostrarReporte(true);
+      setModalReporteOpen(false);
+    } catch (err) {
+      alert('Error al generar el reporte');
+      console.error(err);
+    }
+  };
+
   return (
     <Layout>
       <div className="min-h-screen flex flex-col items-center justify-start p-6 text-white">
@@ -116,13 +150,74 @@ function Recepcion() {
           >
             INGRESAR NUEVA CARGA
           </button>
+
           <button
-            onClick={() => alert('Función en desarrollo')}
-            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition"
+            onClick={() => setModalReporteOpen(true)}
+            className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg transition"
           >
             GENERAR REPORTE
           </button>
         </div>
+
+        {modalReporteOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="relative bg-gray-900 text-white rounded-xl shadow-lg w-[90%] max-w-md p-8">
+
+              <button
+                onClick={() => setModalReporteOpen(false)}
+                className="absolute top-3 right-3 text-white text-2xl font-bold hover:text-red-500"
+              >
+                &times;
+              </button>
+
+              <div className="flex flex-col items-center mb-6">
+                <h2 className="text-xl font-bold text-green-400">Selecciona Carga</h2>
+              </div>
+
+              <label className="block text-sm mb-1">Fecha de carga:</label>
+              <select
+                className="w-full bg-gray-800 px-4 py-2 mb-4 rounded"
+                value={fechaSeleccionada}
+                onChange={(e) => {
+                  setFechaSeleccionada(e.target.value);
+                  setCodigoSeleccionado('');
+                }}
+              >
+                <option value="">-- Selecciona una fecha --</option>
+                {fechasDisponibles.map((f, i) => (
+                  <option key={i} value={f}>{f}</option>
+                ))}
+              </select>
+
+              {fechaSeleccionada && (
+                <>
+                  <label className="block text-sm mb-1">Código de carga:</label>
+                  <select
+                    className="w-full bg-gray-800 px-4 py-2 mb-6 rounded"
+                    value={codigoSeleccionado}
+                    onChange={(e) => setCodigoSeleccionado(e.target.value)}
+                  >
+                    <option value="">-- Selecciona un código --</option>
+                    {cargasPorFecha[fechaSeleccionada].map((c, i) => (
+                      <option key={i} value={c.codigoCarga}>{c.codigoCarga}</option>
+                    ))}
+                  </select>
+                </>
+              )}
+
+              <div className="flex justify-center">
+                <button
+                  className="bg-green-400 text-black font-bold py-2 px-6 rounded hover:bg-green-500"
+                  disabled={!codigoSeleccionado}
+                  onClick={() => handleGenerarReporteDesdeCodigo()}
+                >
+                  Generar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         <CargaModal
           isOpen={modalOpen}
